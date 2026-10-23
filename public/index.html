@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="AS ANAMUL RGB URL shortener">
+  <title>AS ANAMUL — URL Shortener</title><link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="topbar"><a class="brand" href="/"><span class="brand-mark">AS</span><span>ANAMUL<span class="muted"> LINK</span></span></a><nav><button class="text-button" id="navLogin">Login</button><button class="small-button" id="navRegister">Create account</button><button class="text-button hidden" id="navDashboard">Dashboard</button><button class="text-button hidden" id="navAdmin">Admin</button><button class="text-button hidden" id="navLogout">Logout</button></nav></header>
+<main>
+<section class="hero">
+  <div class="pill"><span class="pulse"></span> SMART LINKS · SIMPLE SHARING</div>
+  <h1>Short links.<br><span class="gradient-text">Bigger possibilities.</span></h1>
+  <p class="hero-copy">Turn long URLs into short, easy-to-share links. Track clicks and manage everything from one dashboard.</p>
+  <div class="shortener card">
+    <label for="urlInput">Paste your long URL</label>
+    <div class="input-row"><input id="urlInput" type="url" placeholder="https://example.com/your-long-link" autocomplete="url"><button id="shortenBtn" class="primary-button">Shorten link <span>↗</span></button></div>
+    <div class="optional-row"><input id="titleInput" type="text" maxlength="100" placeholder="Link title (optional)"><input id="customInput" type="text" maxlength="32" placeholder="Custom alias (optional)"></div>
+    <p class="fine-print">By creating a link, you confirm you have permission to share the destination.</p>
+    <div id="shortResult" class="result hidden"></div>
+  </div>
+  <div class="trust-row"><span>✦ Free link tools</span><span>✦ Click analytics</span><span>✦ Secure accounts</span></div>
+</section>
+<section class="feature-grid">
+  <article class="feature card"><div class="feature-icon cyan">↗</div><h3>Simple short links</h3><p>Share a cleaner URL and optionally choose a custom alias.</p></article>
+  <article class="feature card"><div class="feature-icon purple">▥</div><h3>Click analytics</h3><p>Review total clicks and recent activity from your dashboard.</p></article>
+  <article class="feature card"><div class="feature-icon pink">◇</div><h3>Ad-supported pages</h3><p>Configure your own ad placements and approved network integrations.</p></article>
+</section>
+<section class="auth-section card hidden" id="authPanel">
+  <button class="close-button" id="closeAuth" aria-label="Close">×</button><p class="eyebrow">YOUR WORKSPACE</p><h2 id="authTitle">Welcome back</h2><p class="muted" id="authSubtitle">Sign in to manage your links.</p>
+  <form id="authForm"><label for="email">Email address</label><input id="email" type="email" required autocomplete="email" placeholder="you@example.com"><label for="password">Password</label><input id="password" type="password" minlength="10" required autocomplete="current-password" placeholder="At least 10 characters"><button class="primary-button full" id="authSubmit">Login</button></form><p id="authSwitch" class="switch-line">New here? <button class="inline-link" id="switchAuth">Create an account</button></p><div id="authMessage" class="message"></div>
+</section>
+<section class="workspace hidden" id="dashboard">
+  <div class="section-heading"><div><p class="eyebrow">YOUR WORKSPACE</p><h2>Dashboard</h2></div><span id="welcomeEmail" class="muted"></span></div>
+  <div class="stats-grid"><div class="stat card"><span>Total links</span><strong id="statLinks">0</strong></div><div class="stat card"><span>Total clicks</span><strong id="statClicks">0</strong></div><div class="stat card"><span>Account</span><strong class="stat-small">Active</strong></div></div>
+  <div class="card table-card"><div class="section-heading"><h3>Your short links</h3><button id="refreshDashboard" class="secondary-button">Refresh</button></div><div id="linksTable" class="link-list"></div></div>
+  <div class="card api-card"><div class="section-heading"><div><h3>Developer API</h3><p class="muted">Use your private key to create links from your own app.</p></div><button id="rotateApiKey" class="secondary-button">Rotate key</button></div><code id="apiKey">Loading…</code><p class="fine-print">Never share this key publicly. Rotating it invalidates the old key.</p><pre>POST /api/v1/shorten
+Header: X-API-Key: YOUR_KEY
+JSON: { "url": "https://example.com" }</pre></div>
+</section>
+<section class="workspace hidden" id="adminPanel">
+  <div class="section-heading"><div><p class="eyebrow">CONTROL CENTER</p><h2>Admin panel</h2></div><span class="pill">ADMIN ONLY</span></div>
+  <div class="stats-grid"><div class="stat card"><span>Users</span><strong id="adminUsers">0</strong></div><div class="stat card"><span>Links</span><strong id="adminLinks">0</strong></div><div class="stat card"><span>Clicks</span><strong id="adminClicks">0</strong></div><div class="stat card"><span>Ads</span><strong id="adminAds">0</strong></div></div>
+  <div class="card admin-card"><h3>Ad settings</h3><div class="settings-row"><label><input type="checkbox" id="adEnabled" checked> Show advertisement page</label><label>Continue delay (seconds)<input id="continueSeconds" type="number" min="0" max="30" value="5"></label><button id="saveSettings" class="primary-button">Save settings</button></div><p class="fine-print">Ad networks must allow your page layout and traffic. Never incentivize or force ad clicks.</p></div>
+  <div class="card admin-card"><h3>Add your own advertisement</h3><form id="adForm" class="admin-form"><select id="adStep"><option value="0">Any step (rotate)</option><option value="1">Step 1</option><option value="2">Step 2</option><option value="3">Step 3</option><option value="4">Step 4</option><option value="5">Step 5</option><option value="6">Step 6</option><option value="7">Step 7</option><option value="8">Step 8</option></select><input id="adTitle" placeholder="Ad title" required maxlength="120"><input id="adFile" type="file" accept="image/*,video/*"><input id="adImage" type="url" placeholder="Image or Video URL (optional) - pic, .mp4/.webm, or YouTube link"><input id="adDestination" type="url" placeholder="Learn more URL (optional)"><textarea id="adBody" placeholder="Ad description (optional)" maxlength="500"></textarea><button class="primary-button">Add advertisement</button></form><p class="fine-print">Phone theke file beche nile seta server-e upload hobe (max 50 MB, sudhu pic/video). Step 1-8 er jonno alada ad bosale oi step-e sudhu oi ad dekhabe; ekta step-e notun ad bosale ager ad replace hobe.</p><h3>8 step slots</h3><div id="stepSlots" class="link-list"></div><div id="adsList" class="link-list"></div></div>
+  <div class="card admin-card"><h3>Recent users</h3><div id="usersList" class="link-list"></div></div>
+</section>
+</main>
+<footer class="site-footer"><div class="brand"><span class="brand-mark">AS</span><span>ANAMUL<span class="muted"> LINK</span></span></div><p>Shorten responsibly. Respect privacy and destination-site rules.</p><p class="tiny">© <span id="year"></span> AS ANAMUL</p></footer>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="/app.js" defer></script>
+</body></html>

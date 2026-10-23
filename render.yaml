@@ -1,0 +1,24 @@
+# Render free deployment for AS ANAMUL URL Shortener (Termux edition v3)
+# In Render: New > Web Service > connect your GitHub repo containing these files,
+# then set the env vars below in the Render dashboard. Do NOT put real secrets in git.
+# If the name below is already taken on Render, change it in the dashboard.
+services:
+  - type: web
+    name: asanamul-link
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: COOKIE_SECURE
+        value: "true"
+      - key: BASE_URL
+        value: https://asanamul-link.onrender.com
+      - key: SESSION_SECRET
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
