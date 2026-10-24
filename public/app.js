@@ -45,7 +45,12 @@ $("authForm").addEventListener("submit",async e=>{
   e.preventDefault(); const body={email:$("email").value,password:$("password").value};
   try{
     await api("/api/auth/"+authMode,{method:"POST",body});
-    await loadConfig(); toast(authMode==="login"?"Welcome back":"Account created"); $("authPanel").classList.add("hidden");
+    await loadConfig();
+    // Do not claim success if the session cookie was not kept: without a
+    // session, loadConfig leaves currentUser null and the header keeps
+    // showing Login. That masked failure used to look like a login loop.
+    if(!currentUser){$("authMessage").textContent="Signed in on the server, but your browser did not keep the session. Please allow cookies for this site and open it in Chrome (not an in-app browser), then try again.";return;}
+    toast(authMode==="login"?"Welcome back":"Account created"); $("authPanel").classList.add("hidden");
   }catch(err){$("authMessage").textContent=err.message;}
 });
 $("shortenBtn").addEventListener("click",async()=>{

@@ -66,6 +66,36 @@ try {
   const cols = db.prepare("PRAGMA table_info(ads)").all();
   if (!cols.some(c => c.name === "step_number")) db.exec("ALTER TABLE ads ADD COLUMN step_number INTEGER");
 } catch {}
+// Sessions live in the same SQLite file as users/links, not in memory, so a
+// normal server restart does not log everyone out. (Render free ephemeral
+// disk can still wipe data/app.db on a redeploy/restart — that limit remains.)
+db.exec(`CREATE TABLE IF NOT EXISTS sessions (sid TEXT PRIMARY KEY, sess TEXT NOT NULL, expire INTEGER NOT NULL)`);
+class SqliteSessionStore extends session.Store {
+  get(sid, cb) {
+    try {
+      const row = db.prepare("SELECT sess, expire FROM sessions WHERE sid=?").get(sid);
+      if (!row || row.expire < Date.now()) return cb(null, null);
+      cb(null, JSON.parse(row.sess));
+    } catch (e) { cb(e); }
+  }
+  set(sid, sess, cb) {
+    try {
+      const expire = sess.cookie && sess.cookie.expires ? new Date(sess.cookie.expires).getTime() : Date.now() + 1000 * 60 * 60 * 24 * 7;
+      db.prepare("INSERT INTO sessions(sid,sess,expire) VALUES(?,?,?) ON CONFLICT(sid) DO UPDATE SET sess=excluded.sess, expire=excluded.expire").run(sid, JSON.stringify(sess), expire);
+      cb(null);
+    } catch (e) { cb(e); }
+  }
+  destroy(sid, cb) {
+    try { db.prepare("DELETE FROM sessions WHERE sid=?").run(sid); cb(null); } catch (e) { cb(e); }
+  }
+  touch(sid, sess, cb) {
+    try {
+      const expire = sess.cookie && sess.cookie.expires ? new Date(sess.cookie.expires).getTime() : Date.now() + 1000 * 60 * 60 * 24 * 7;
+      db.prepare("UPDATE sessions SET expire=? WHERE sid=?").run(expire, sid);
+      cb(null);
+    } catch (e) { cb(e); }
+  }
+}
 
 const getSetting = db.prepare("SELECT value FROM settings WHERE key=?");
 const setSetting = db.prepare("INSERT INTO settings(key,value) VALUES(?,?) ON CONFLICT(key) DO UPDATE SET value=excluded.value");
@@ -90,6 +120,11 @@ if (!db.prepare("SELECT id FROM users WHERE email=?").get(adminEmail)) {
 }
 
 app.disable("x-powered-by");
+// Render (and any reverse proxy) terminates TLS and forwards plain HTTP to the
+// app. Without trust proxy, Express sees the request as insecure and a
+// secure session cookie is never set, so login looks successful but the next
+// request is unauthenticated again. This was the Render login loop.
+app.set("trust proxy", 1);
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -106,7 +141,7 @@ app.use(express.urlencoded({ extended: false, limit: "20kb" }));
 app.use(express.json({ limit: "20kb" }));
 
 app.use(session({
-  // Termux edition: memory session store (no native sqlite module). Sessions end on restart; links/users stay in data/app.db.
+  store: new SqliteSessionStore(),
   secret: process.env.SESSION_SECRET || "development-only-change-me",
   resave: false,
   saveUninitialized: false,
