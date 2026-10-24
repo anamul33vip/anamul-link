@@ -61,6 +61,15 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS products (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  photo_url TEXT DEFAULT '',
+  link_url TEXT DEFAULT '',
+  description TEXT DEFAULT '',
+  active INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 `);
 try {
   const cols = db.prepare("PRAGMA table_info(ads)").all();
@@ -102,6 +111,11 @@ const setSetting = db.prepare("INSERT INTO settings(key,value) VALUES(?,?) ON CO
 if (!getSetting.get("site_name")) setSetting.run("site_name", "AS ANAMUL");
 if (!getSetting.get("ad_enabled")) setSetting.run("ad_enabled", "true");
 if (!getSetting.get("continue_seconds")) setSetting.run("continue_seconds", "5");
+if (!getSetting.get("social_youtube")) setSetting.run("social_youtube", "https://www.youtube.com/@Anamul_Islamic_Echo");
+if (!getSetting.get("social_telegram")) setSetting.run("social_telegram", "https://t.me/asanamulcoding");
+if (!getSetting.get("social_tiktok")) setSetting.run("social_tiktok", "");
+if (!getSetting.get("contact_whatsapp")) setSetting.run("contact_whatsapp", "");
+if (!getSetting.get("contact_phone")) setSetting.run("contact_phone", "");
 if (db.prepare("SELECT COUNT(*) AS n FROM ads").get().n === 0) {
   db.prepare("INSERT INTO ads(title,image_url,destination_url,body) VALUES(?,?,?,?)").run("AS ANAMUL Telegram", "", "https://t.me/asanamulcoding", "Join AS ANAMUL on Telegram for new APK updates and support.");
   db.prepare("INSERT INTO ads(title,image_url,destination_url,body) VALUES(?,?,?,?)").run("AS ANAMUL YouTube", "", "https://www.youtube.com/@Anamul_Islamic_Echo", "Subscribe to AS ANAMUL on YouTube for new videos and updates.");
@@ -211,13 +225,32 @@ app.use("/api", (req, res, next) => {
   csrfCheck(req, res, next);
 });
 
+function publicSocial() {
+  return {
+    youtube: getSetting.get("social_youtube")?.value || "",
+    tiktok: getSetting.get("social_tiktok")?.value || "",
+    telegram: getSetting.get("social_telegram")?.value || ""
+  };
+}
+function publicContact() {
+  return {
+    whatsapp: (getSetting.get("contact_whatsapp")?.value || "").replace(/[^0-9]/g, ""),
+    phone: getSetting.get("contact_phone")?.value || ""
+  };
+}
+function publicProducts() {
+  return db.prepare("SELECT id,title,photo_url,link_url,description FROM products WHERE active=1 ORDER BY id DESC").all();
+}
 app.get("/api/public/config", (req, res) => {
   res.json({
     siteName: getSetting.get("site_name")?.value || "AS ANAMUL",
     adEnabled: getSetting.get("ad_enabled")?.value !== "false",
     continueSeconds: Math.max(0, Math.min(30, Number(getSetting.get("continue_seconds")?.value || 5))),
     user: userFromReq(req) ? { email: userFromReq(req).email, role: userFromReq(req).role } : null,
-    csrfToken: csrfToken(req)
+    csrfToken: csrfToken(req),
+    social: publicSocial(),
+    contact: publicContact(),
+    products: publicProducts()
   });
 });
 
@@ -360,6 +393,50 @@ app.post("/api/admin/ads", requireAuth, requireAdmin, (req, res) => {
   if (stepNum) db.prepare("DELETE FROM ads WHERE step_number=?").run(stepNum);
   const info = db.prepare("INSERT INTO ads(title,image_url,destination_url,body,step_number) VALUES(?,?,?,?,?)").run(title, image || "", destination || "", body, stepNum);
   res.status(201).json({ ok: true, id: info.lastInsertRowid, step_number: stepNum });
+});
+
+// Social, contact and business products: admin only. Users only see them.
+app.get("/api/admin/social", requireAuth, requireAdmin, (req, res) => {
+  res.json({ social: publicSocial(), contact: publicContact() });
+});
+app.post("/api/admin/social", requireAuth, requireAdmin, (req, res) => {
+  const cleanUrl = (v) => {
+    const s = String(v || "").trim();
+    if (!s) return "";
+    try { const u = new URL(s); if (!["http:", "https:"].includes(u.protocol)) return null; return u.toString(); } catch { return null; }
+  };
+  const youtube = cleanUrl(req.body.youtube), tiktok = cleanUrl(req.body.tiktok), telegram = cleanUrl(req.body.telegram);
+  if (youtube === null || tiktok === null || telegram === null) return res.status(400).json({ error: "Social link must be a full http(s) URL, or empty." });
+  const whatsapp = String(req.body.whatsapp || "").replace(/[^0-9]/g, "");
+  if (whatsapp && (whatsapp.length < 7 || whatsapp.length > 15)) return res.status(400).json({ error: "WhatsApp number must be 7-15 digits." });
+  setSetting.run("social_youtube", youtube); setSetting.run("social_tiktok", tiktok); setSetting.run("social_telegram", telegram);
+  setSetting.run("contact_whatsapp", whatsapp); setSetting.run("contact_phone", String(req.body.phone || "").trim().slice(0, 40));
+  res.json({ ok: true });
+});
+app.get("/api/admin/products", requireAuth, requireAdmin, (req, res) => {
+  res.json(db.prepare("SELECT * FROM products ORDER BY id DESC").all());
+});
+app.post("/api/admin/products", requireAuth, requireAdmin, (req, res) => {
+  const title = String(req.body.title || "").trim().slice(0, 120);
+  if (!title) return res.status(400).json({ error: "Product title is required." });
+  let photo = String(req.body.photo_url || "").trim();
+  if (photo && !photo.startsWith("/uploads/")) {
+    try { const u = new URL(photo); if (!["http:", "https:"].includes(u.protocol)) throw new Error(); } catch { return res.status(400).json({ error: "Photo must be an uploaded file or a full http(s) URL." }); }
+  }
+  let link = String(req.body.link_url || "").trim();
+  if (link) { try { const u = new URL(link); if (!["http:", "https:"].includes(u.protocol)) throw new Error(); } catch { return res.status(400).json({ error: "Demo link must be a full http(s) URL." }); } }
+  const r = db.prepare("INSERT INTO products(title,photo_url,link_url,description) VALUES(?,?,?,?)").run(title, photo, link, String(req.body.description || "").slice(0, 500));
+  res.json({ ok: true, id: Number(r.lastInsertRowid) });
+});
+app.post("/api/admin/products/:id/toggle", requireAuth, requireAdmin, (req, res) => {
+  const row = db.prepare("SELECT active FROM products WHERE id=?").get(req.params.id);
+  if (!row) return res.status(404).json({ error: "Product not found." });
+  db.prepare("UPDATE products SET active=? WHERE id=?").run(row.active ? 0 : 1, req.params.id);
+  res.json({ ok: true });
+});
+app.delete("/api/admin/products/:id", requireAuth, requireAdmin, (req, res) => {
+  db.prepare("DELETE FROM products WHERE id=?").run(req.params.id);
+  res.json({ ok: true });
 });
 
 // Phone file upload for ads: image or video only, admin only, max 50 MB.

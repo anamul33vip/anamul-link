@@ -26,6 +26,12 @@
   <article class="feature card"><div class="feature-icon purple">▥</div><h3>Click analytics</h3><p>Review total clicks and recent activity from your dashboard.</p></article>
   <article class="feature card"><div class="feature-icon pink">◇</div><h3>Ad-supported pages</h3><p>Configure your own ad placements and approved network integrations.</p></article>
 </section>
+<section id="businessSection" class="business-section hidden">
+  <div class="section-heading"><div><p class="eyebrow">BUSINESS</p><h2>Shop / Business</h2></div></div>
+  <p class="muted" id="businessIntro">Demo photo ar link dekhe pochondo hole WhatsApp-e jogajog korun.</p>
+  <div id="businessList" class="product-grid"></div>
+  <div id="businessContact" class="hidden" style="margin-top:16px"></div>
+</section>
 <section class="auth-section card hidden" id="authPanel">
   <button class="close-button" id="closeAuth" aria-label="Close">×</button><p class="eyebrow">YOUR WORKSPACE</p><h2 id="authTitle">Welcome back</h2><p class="muted" id="authSubtitle">Sign in to manage your links.</p>
   <form id="authForm"><label for="email">Email address</label><input id="email" type="email" required autocomplete="email" placeholder="you@example.com"><label for="password">Password</label><input id="password" type="password" minlength="10" required autocomplete="current-password" placeholder="At least 10 characters"><button class="primary-button full" id="authSubmit">Login</button></form><p id="authSwitch" class="switch-line">New here? <button class="inline-link" id="switchAuth">Create an account</button></p><div id="authMessage" class="message"></div>
@@ -43,10 +49,18 @@ JSON: { "url": "https://example.com" }</pre></div>
   <div class="stats-grid"><div class="stat card"><span>Users</span><strong id="adminUsers">0</strong></div><div class="stat card"><span>Links</span><strong id="adminLinks">0</strong></div><div class="stat card"><span>Clicks</span><strong id="adminClicks">0</strong></div><div class="stat card"><span>Ads</span><strong id="adminAds">0</strong></div></div>
   <div class="card admin-card"><h3>Ad settings</h3><div class="settings-row"><label><input type="checkbox" id="adEnabled" checked> Show advertisement page</label><label>Continue delay (seconds)<input id="continueSeconds" type="number" min="0" max="30" value="5"></label><button id="saveSettings" class="primary-button">Save settings</button></div><p class="fine-print">Ad networks must allow your page layout and traffic. Never incentivize or force ad clicks.</p></div>
   <div class="card admin-card"><h3>Add your own advertisement</h3><form id="adForm" class="admin-form"><select id="adStep"><option value="0">Any step (rotate)</option><option value="1">Step 1</option><option value="2">Step 2</option><option value="3">Step 3</option><option value="4">Step 4</option><option value="5">Step 5</option><option value="6">Step 6</option><option value="7">Step 7</option><option value="8">Step 8</option></select><input id="adTitle" placeholder="Ad title" required maxlength="120"><input id="adFile" type="file" accept="image/*,video/*"><input id="adImage" type="url" placeholder="Image or Video URL (optional) - pic, .mp4/.webm, or YouTube link"><input id="adDestination" type="url" placeholder="Learn more URL (optional)"><textarea id="adBody" placeholder="Ad description (optional)" maxlength="500"></textarea><button class="primary-button">Add advertisement</button></form><p class="fine-print">Phone theke file beche nile seta server-e upload hobe (max 50 MB, sudhu pic/video). Step 1-8 er jonno alada ad bosale oi step-e sudhu oi ad dekhabe; ekta step-e notun ad bosale ager ad replace hobe.</p><h3>8 step slots</h3><div id="stepSlots" class="link-list"></div><div id="adsList" class="link-list"></div></div>
+  <div class="card admin-card"><h3>Social, contact &amp; business (admin only)</h3>
+    <p class="fine-print">Users sudhu floating button, business product ar WhatsApp button dekhbe. Edit sudhu admin korte parbe.</p>
+    <form id="socialForm" class="admin-form"><input id="socialYoutube" type="url" placeholder="YouTube link"><input id="socialTiktok" type="url" placeholder="TikTok link"><input id="socialTelegram" type="url" placeholder="Telegram link"><input id="contactWhatsapp" type="text" placeholder="WhatsApp number (digits, e.g. 8801XXXXXXXXX)"><input id="contactPhone" type="text" placeholder="Contact number to show (optional)"><button class="primary-button">Save social &amp; contact</button></form>
+    <h3 style="margin-top:22px">Add business product</h3>
+    <form id="productForm" class="admin-form"><input id="productTitle" placeholder="Product name" required maxlength="120"><input id="productFile" type="file" accept="image/*"><input id="productPhoto" type="url" placeholder="Photo URL (optional - file hole upload hobe)"><input id="productLink" type="url" placeholder="Demo / details link (optional)"><textarea id="productDesc" placeholder="Description (optional)" maxlength="500"></textarea><button class="primary-button">Add product</button></form>
+    <div id="productsListAdmin" class="link-list" style="margin-top:14px"></div>
+  </div>
   <div class="card admin-card"><h3>Recent users</h3><div id="usersList" class="link-list"></div></div>
 </section>
 </main>
 <footer class="site-footer"><div class="brand"><span class="brand-mark">AS</span><span>ANAMUL<span class="muted"> LINK</span></span></div><p>Shorten responsibly. Respect privacy and destination-site rules.</p><p class="tiny">© <span id="year"></span> AS ANAMUL</p></footer>
+<div id="socialFloat" class="social-float hidden"><a id="floatYoutube" href="#" target="_blank" rel="noopener noreferrer" class="float-btn yt" aria-label="YouTube">▶</a><a id="floatTiktok" href="#" target="_blank" rel="noopener noreferrer" class="float-btn tt" aria-label="TikTok">♪</a><a id="floatTelegram" href="#" target="_blank" rel="noopener noreferrer" class="float-btn tg" aria-label="Telegram">✈</a></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script src="/app.js" defer></script>
 </body></html>

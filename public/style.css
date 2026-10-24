@@ -13,3 +13,15 @@
 .topbar{box-shadow:0 0 24px rgba(124,108,255,.25)}
 .ad-video{width:100%;max-height:320px;border-radius:10px;margin-top:12px;background:#000;box-shadow:0 0 24px rgba(124,108,255,.35)}
 .ad-image{box-shadow:0 0 24px rgba(124,108,255,.35)}
+
+.social-float{position:fixed;right:14px;bottom:14px;z-index:20;display:flex;flex-direction:column;gap:10px}
+.float-btn{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;color:#fff;font-size:20px;font-weight:700;text-decoration:none;box-shadow:0 6px 20px rgba(0,0,0,.45)}
+.float-btn.yt{background:#ff0000}.float-btn.tt{background:#000;border:1px solid #fff}.float-btn.tg{background:#229ed9}
+.business-section{max-width:1000px;margin:0 auto;padding:10px 20px 60px}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-top:14px}
+.product-card{padding:16px}
+.product-card img{width:100%;height:170px;object-fit:cover;border-radius:12px;margin-bottom:12px}
+.product-card h3{margin:0 0 8px;font-size:17px}
+.product-card p{color:var(--muted);font-size:13px;line-height:1.6}
+.wa-button{display:inline-block;background:#25d366;color:#06130a!important;font-weight:700;padding:10px 14px;border-radius:10px;margin-top:10px}
+.demo-button{display:inline-block;background:#1a2340;color:#e7eaff;border:1px solid var(--line);padding:10px 14px;border-radius:10px;margin:10px 8px 0 0}

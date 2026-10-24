@@ -30,9 +30,34 @@ function updateNav() {
   $("navLogout").classList.toggle("hidden",!currentUser);
   $("navAdmin").classList.toggle("hidden",!currentUser||currentUser.role!=="admin");
 }
+function renderSocial(social, contact, products) {
+  const s = social || {}, c = contact || {};
+  const setBtn = (id, url) => { const el = $(id); if (url) { el.href = url; el.classList.remove("hidden"); } else el.classList.add("hidden"); };
+  setBtn("floatYoutube", s.youtube); setBtn("floatTiktok", s.tiktok); setBtn("floatTelegram", s.telegram);
+  const anySocial = s.youtube || s.tiktok || s.telegram;
+  $("socialFloat").classList.toggle("hidden", !anySocial);
+  const list = products || [];
+  const wa = c.whatsapp ? "https://wa.me/" + c.whatsapp + "?text=" + encodeURIComponent("Hi, ami apnar product somporke jante chai.") : "";
+  if (list.length) {
+    $("businessSection").classList.remove("hidden");
+    $("businessList").innerHTML = list.map(pr => {
+      const waLink = c.whatsapp ? "<a class=\"wa-button\" href=\"https://wa.me/" + c.whatsapp + "?text=" + encodeURIComponent("Hi, ami " + pr.title + " product somporke jante chai.") + "\" target=\"_blank\" rel=\"noopener noreferrer\">WhatsApp-e jogajog</a>" : "";
+      return "<article class=\"product-card card\">" + (pr.photo_url ? "<img src=\"" + esc(pr.photo_url) + "\" alt=\"\">" : "") + "<h3>" + esc(pr.title) + "</h3>" + (pr.description ? "<p>" + esc(pr.description) + "</p>" : "") + (pr.link_url ? "<a class=\"demo-button\" href=\"" + esc(pr.link_url) + "\" target=\"_blank\" rel=\"noopener noreferrer\">Demo / Link dekhun</a>" : "") + waLink + "</article>";
+    }).join("");
+  } else {
+    $("businessSection").classList.add("hidden");
+  }
+  if (c.whatsapp || c.phone) {
+    $("businessContact").classList.remove("hidden");
+    $("businessContact").innerHTML = (c.phone ? "<p class=\"muted\">Contact: " + esc(c.phone) + "</p>" : "") + (wa ? "<a class=\"wa-button\" href=\"" + wa + "\" target=\"_blank\" rel=\"noopener noreferrer\">WhatsApp-e jogajog</a>" : "");
+  } else {
+    $("businessContact").classList.add("hidden");
+  }
+}
 async function loadConfig() {
   const c=await api("/api/public/config"); csrf=c.csrfToken; currentUser=c.user;
   $("year").textContent=new Date().getFullYear(); updateNav();
+  renderSocial(c.social, c.contact, c.products);
   if(currentUser) { $("authPanel").classList.add("hidden"); await loadDashboard(); }
 }
 $("navLogin").addEventListener("click",()=>showAuth("login"));
@@ -93,10 +118,21 @@ async function loadAdmin(){
     $("stepSlots").querySelectorAll("[data-stepslot]").forEach(b=>b.addEventListener("click",()=>{$("adStep").value=b.dataset.stepslot;$("adForm").scrollIntoView({behavior:"smooth"});}));
     $("adsList").querySelectorAll("[data-adtoggle]").forEach(b=>b.addEventListener("click",async()=>{try{await api("/api/admin/ads/"+b.dataset.adtoggle+"/toggle",{method:"POST",body:{}});await loadAdmin();}catch(e){toast(e.message);}}));
     $("adsList").querySelectorAll("[data-addelete]").forEach(b=>b.addEventListener("click",async()=>{if(!confirm("Delete this ad?"))return;try{await api("/api/admin/ads/"+b.dataset.addelete,{method:"DELETE"});await loadAdmin();}catch(e){toast(e.message);}}));
+    try {
+      const sc = await api("/api/admin/social");
+      $("socialYoutube").value = sc.social.youtube || ""; $("socialTiktok").value = sc.social.tiktok || ""; $("socialTelegram").value = sc.social.telegram || "";
+      $("contactWhatsapp").value = sc.contact.whatsapp || ""; $("contactPhone").value = sc.contact.phone || "";
+      const prods = await api("/api/admin/products");
+      $("productsListAdmin").innerHTML = prods.length ? prods.map(pr => "<div class=\"link-item\"><div class=\"link-main\"><strong>" + esc(pr.title) + "</strong><div class=\"tiny\">" + (pr.active ? "Active" : "Paused") + (pr.link_url ? " · " + esc(pr.link_url) : "") + "</div></div><div class=\"link-actions\"><button data-prodtoggle=\"" + pr.id + "\">" + (pr.active ? "Pause" : "Activate") + "</button><button data-proddelete=\"" + pr.id + "\">Delete</button></div></div>").join("") : '<p class="muted">No business products yet.</p>';
+      $("productsListAdmin").querySelectorAll("[data-prodtoggle]").forEach(b => b.addEventListener("click", async () => { try { await api("/api/admin/products/" + b.dataset.prodtoggle + "/toggle", { method: "POST", body: {} }); await loadAdmin(); } catch (e) { toast(e.message); } }));
+      $("productsListAdmin").querySelectorAll("[data-proddelete]").forEach(b => b.addEventListener("click", async () => { if (!confirm("Delete this product?")) return; try { await api("/api/admin/products/" + b.dataset.proddelete, { method: "DELETE" }); await loadAdmin(); } catch (e) { toast(e.message); } }));
+    } catch (e) { toast(e.message); }
     const users=await api("/api/admin/users");
     $("usersList").innerHTML=users.map(u=>`<div class="link-item"><div class="link-main"><strong>${esc(u.email)}</strong><div class="tiny">#${u.id} · ${esc(u.role)} · ${esc(u.created_at)}</div></div></div>`).join("");
   }catch(e){toast(e.message);}
 }
 $("saveSettings").addEventListener("click",async()=>{try{await api("/api/admin/settings",{method:"POST",body:{ad_enabled:$("adEnabled").checked,continue_seconds:Number($("continueSeconds").value)}});toast("Settings saved");}catch(e){toast(e.message);}});
 $("adForm").addEventListener("submit",async e=>{e.preventDefault();try{let mediaUrl=$("adImage").value;const fileInput=$("adFile");if(fileInput&&fileInput.files&&fileInput.files[0]){const fd=new FormData();fd.append("file",fileInput.files[0]);const upRes=await fetch("/api/admin/upload",{method:"POST",headers:csrf?{"X-CSRF-Token":csrf}:{},body:fd});const upData=await upRes.json().catch(()=>({}));if(!upRes.ok)throw new Error(upData.error||"Upload failed");mediaUrl=upData.url;}await api("/api/admin/ads",{method:"POST",body:{title:$("adTitle").value,image_url:mediaUrl,destination_url:$("adDestination").value,body:$("adBody").value,step_number:Number($("adStep").value)||0}});$("adForm").reset();await loadAdmin();toast("Advertisement added");}catch(err){toast(err.message);}});
+$("socialForm").addEventListener("submit", async e => { e.preventDefault(); try { await api("/api/admin/social", { method: "POST", body: { youtube: $("socialYoutube").value, tiktok: $("socialTiktok").value, telegram: $("socialTelegram").value, whatsapp: $("contactWhatsapp").value, phone: $("contactPhone").value } }); toast("Social & contact saved"); await loadConfig(); } catch (err) { toast(err.message); } });
+$("productForm").addEventListener("submit", async e => { e.preventDefault(); try { let photoUrl = $("productPhoto").value; const fi = $("productFile"); if (fi && fi.files && fi.files[0]) { const fd = new FormData(); fd.append("file", fi.files[0]); const upRes = await fetch("/api/admin/upload", { method: "POST", headers: csrf ? { "X-CSRF-Token": csrf } : {}, body: fd }); const upData = await upRes.json().catch(() => ({})); if (!upRes.ok) throw new Error(upData.error || "Upload failed"); photoUrl = upData.url; } await api("/api/admin/products", { method: "POST", body: { title: $("productTitle").value, photo_url: photoUrl, link_url: $("productLink").value, description: $("productDesc").value } }); $("productForm").reset(); await loadAdmin(); await loadConfig(); toast("Product added"); } catch (err) { toast(err.message); } });
 loadConfig().catch(e=>toast("Could not connect to server: "+e.message));
